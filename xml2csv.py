@@ -2,7 +2,7 @@
 
 
 # Credit where credit is due...
-__author__ = 'Jake Miller (@LaconicWolf)'
+__author__ = 'Jake Miller + Anthony Terrano now (@LaconicWolf, @TerranovaTech)'
 __date__ = '20171220'
 __version__ = '0.01'
 __description__ = """Parses the XML output from an nmap scan. The user
@@ -32,8 +32,13 @@ def get_host_data(root):
         if not host.findall('status')[0].attrib['state'] == 'up':
             continue
         
-        # Get IP address and host info. If no hostname, then ''
+        # Get IP address, MAC address, and host info. If no hostname, then ''
         ip_address = host.findall('address')[0].attrib['addr']
+        try:
+            mac_address = host.findall('address')[1].attrib['addr']
+        except IndexError:
+            mac_address = ''  # If MAC address is not available, set it to ''
+        
         host_name_element = host.findall('hostnames')
         try:
             host_name = host_name_element[0].findall('hostname')[0].attrib['name']
@@ -42,7 +47,7 @@ def get_host_data(root):
         
         # If we only want the IP addresses from the scan, stop here
         if args.ip_addresses:
-            addr_info.extend((ip_address, host_name))
+            addr_info.extend((ip_address, mac_address, host_name))
             host_data.append(addr_info)
             continue
         
@@ -90,7 +95,7 @@ def get_host_data(root):
                     script_output = ''
 
                 # Create a list of the port data
-                port_data.extend((ip_address, host_name, os_name,
+                port_data.extend((ip_address, mac_address, host_name, os_name,
                                   proto, port_id, service, product, 
                                   servicefp, script_id, script_output))
                 
@@ -99,9 +104,10 @@ def get_host_data(root):
 
         # If no port information, just create a list of host information
         except IndexError:
-            addr_info.extend((ip_address, host_name))
+            addr_info.extend((ip_address, mac_address, host_name))
             host_data.append(addr_info)
     return host_data
+
 
 def parse_xml(filename):
     """Given an XML filename, reads and parses the XML file and passes the 
